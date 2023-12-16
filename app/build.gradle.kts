@@ -68,6 +68,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+    implementation("com.google.android.play:integrity:1.3.0")
     implementation("com.google.android.recaptcha:recaptcha:18.3.0")
     implementation(platform("com.google.cloud:libraries-bom:26.28.0"))
     implementation("com.google.cloud:google-cloud-recaptchaenterprise")
