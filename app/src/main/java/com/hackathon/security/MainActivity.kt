@@ -30,6 +30,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavHost
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.android.recaptcha.Recaptcha
 import com.google.android.recaptcha.RecaptchaAction
 import com.google.android.recaptcha.RecaptchaClient
@@ -52,99 +56,141 @@ class MainActivity : ComponentActivity()
         super.onCreate(savedInstanceState)
         setContent {
             AndroidSecurityTheme {
-                var output by remember {
-                    mutableStateOf("")
-                }
-                var isBlocked by remember {
-                    mutableStateOf(false)
-                }
-                val coroutineScope = rememberCoroutineScope()
-                // A surface container using the 'background' color from the theme
-
-                Column {
-
-                    if (isBlocked)
+                val navController = rememberNavController()
+                NavHost(
+                    navController = navController,
+                    startDestination = "LandingScreen",
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    composable(route = "LandingScreen")
                     {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Image(painter = painterResource(id = R.drawable.err), contentDescription = "error")
-                            Text(
-                                text = "Your app has been blocked ! Contact Support !",
+                        Column {
+                            Button(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp)
-                            )
+                                    .padding(4.dp),
+                                onClick = {
+                                    navController.navigate("PlayIntegrityScreen")
+                                }
+                            ) {
+                                Text(text = "Go to Play Integrity API Testing")
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Button(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+                                onClick = {
+                                    navController.navigate("reCaptchaEnterpriseScreen")
+                                }
+                            ) {
+                                Text(text = "Go to reCaptcha Enterprise API Testing")
+                            }
                         }
                     }
-                    else
+                    composable(route = "PlayIntegrityScreen")
                     {
-                        Text(
-                            text = "  $output",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(450.dp)
-                                .padding(horizontal = 8.dp, vertical = 24.dp)
-                                .border(2.dp, color = Color.DarkGray)
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
 
-                        Button(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                            onClick = {
-                                initializeRecaptchaClient(
-                                    onSuccess = {
-                                        output = "Successfully initialized RecaptchaClient !"
-                                    },
-                                    onFailure = {
-                                        output = "Initializing RecaptchaClient failed due to - $it."
-                                    }
-                                ) }
-                        ) {
-                            Text(text = "Initialize Recaptcha client")
+                    }
+
+                    composable(route = "reCaptchaEnterpriseScreen")
+                    {
+                        var output by remember {
+                            mutableStateOf("")
                         }
-                        Spacer(modifier = Modifier.height(5.dp))
+                        var isBlocked by remember {
+                            mutableStateOf(false)
+                        }
+                        val coroutineScope = rememberCoroutineScope()
+                        // A surface container using the 'background' color from the theme
 
-                        Button(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                            onClick = { executeLoginAction(
-                                onSuccess = {
-                                    output = "Successfully executed login action: Token - $it."
+                        Column {
+
+                            if (isBlocked)
+                            {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Image(painter = painterResource(id = R.drawable.err), contentDescription = "error")
+                                    Text(
+                                        text = "Your app has been blocked ! Contact Support !",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    )
+                                }
+                            }
+                            else
+                            {
+                                Text(
+                                    text = "  $output",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(450.dp)
+                                        .padding(horizontal = 8.dp, vertical = 24.dp)
+                                        .border(2.dp, color = Color.DarkGray)
+                                )
+                                Spacer(modifier = Modifier.height(5.dp))
+
+                                Button(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(4.dp),
+                                    onClick = {
+                                        initializeRecaptchaClient(
+                                            onSuccess = {
+                                                output = "Successfully initialized RecaptchaClient !"
+                                            },
+                                            onFailure = {
+                                                output = "Initializing RecaptchaClient failed due to - $it."
+                                            }
+                                        ) }
+                                ) {
+                                    Text(text = "Initialize Recaptcha client")
+                                }
+                                Spacer(modifier = Modifier.height(5.dp))
+
+                                Button(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(4.dp),
+                                    onClick = { executeLoginAction(
+                                        onSuccess = {
+                                            output = "Successfully executed login action: Token - $it."
 //                                    println("<<< $it")
-                                    coroutineScope.launch {
-                                        delay(2000)
-                                    }
-                                    createAssessment(
-                                        token = it,
-                                        onSuccess = { score ->
-                                            if ( score <= 0.4F )
-                                            {
-                                                isBlocked = true
+                                            coroutineScope.launch {
+                                                delay(2000)
                                             }
-                                            else
-                                            {
-                                                output = "Risk Analysis passed with score: $score."
-                                            }
+                                            createAssessment(
+                                                token = it,
+                                                onSuccess = { score ->
+                                                    if ( score <= 0.4F )
+                                                    {
+                                                        isBlocked = true
+                                                    }
+                                                    else
+                                                    {
+                                                        output = "Risk Analysis passed with score: $score."
+                                                    }
+                                                },
+                                                onFailure = {
+                                                    output = "Risk Analysis failed due to - $it."
+                                                }
+                                            )
                                         },
                                         onFailure = {
-                                            output = "Risk Analysis failed due to - $it."
+                                            output = "Executing Login action failed due to - $it."
                                         }
-                                    )
-                                },
-                                onFailure = {
-                                    output = "Executing Login action failed due to - $it."
+                                    ) }
+                                ) {
+                                    Text(text = "Login")
                                 }
-                            ) }
-                        ) {
-                            Text(text = "Login")
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
                         }
-                        Spacer(modifier = Modifier.height(5.dp))
                     }
                 }
             }
