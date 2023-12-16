@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.hackathon.security"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.hackathon.security"
@@ -44,7 +44,7 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/{AL2.0,LGPL2.1,INDEX.LIST,DEPENDENCIES}"
         }
     }
 }
@@ -66,4 +66,16 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    implementation("com.google.android.recaptcha:recaptcha:18.3.0")
+    implementation(platform("com.google.cloud:libraries-bom:26.28.0"))
+    implementation("com.google.cloud:google-cloud-recaptchaenterprise")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:3.4.1")
+//    implementation("com.squareup.okhttp3:okhttps:3.4.1")
+
+
+
 }
