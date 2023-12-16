@@ -34,6 +34,7 @@ import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.android.play.core.integrity.IntegrityManagerFactory
 import com.google.android.recaptcha.Recaptcha
 import com.google.android.recaptcha.RecaptchaAction
 import com.google.android.recaptcha.RecaptchaClient
@@ -46,14 +47,29 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
+import com.google.android.play.core.integrity.StandardIntegrityManager
+import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityToken
+import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityTokenProvider
+import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityTokenRequest
+import com.hackathon.security.network.IntegrityToken
+import retrofit2.Retrofit
+import retrofit2.http.Body
 
 class MainActivity : ComponentActivity()
 {
     private lateinit var recaptchaClient: RecaptchaClient
 
+    private lateinit var standardIntegrityManager: StandardIntegrityManager
+
+    var integrityTokenProvider: StandardIntegrityTokenProvider? = null
+
+    var cloudProjectNumber = 3701217821;
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
+        standardIntegrityManager = IntegrityManagerFactory.createStandard(applicationContext)
+        warmUpIntegrityTokenProvider()
         setContent {
             AndroidSecurityTheme {
                 val navController = rememberNavController()
@@ -91,7 +107,14 @@ class MainActivity : ComponentActivity()
                     }
                     composable(route = "PlayIntegrityScreen")
                     {
-
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Button(onClick = { login() }) {
+                                Text(text = "Login")
+                            }
+                        }
                     }
 
                     composable(route = "reCaptchaEnterpriseScreen")
@@ -195,6 +218,61 @@ class MainActivity : ComponentActivity()
                 }
             }
         }
+    }
+
+    fun warmUpIntegrityTokenProvider() {
+        standardIntegrityManager.prepareIntegrityToken(
+            StandardIntegrityManager.PrepareIntegrityTokenRequest.builder()
+                .setCloudProjectNumber(cloudProjectNumber)
+                .build()
+        )
+            .addOnSuccessListener { tokenProvider -> integrityTokenProvider = tokenProvider }
+            .addOnFailureListener { exception -> handleError(exception) }
+    }
+
+    private fun login() {
+        performIntegrityCheck();
+    }
+
+    private fun performIntegrityCheck() {
+        if (integrityTokenProvider != null) {
+            val integrityTokenResponse = integrityTokenProvider!!.request(
+                StandardIntegrityTokenRequest.builder()
+//                .setRequestHash()
+                    .build()
+            )
+            integrityTokenResponse
+                .addOnSuccessListener { response: StandardIntegrityToken ->
+                    sendToServer(response, response.token())
+                }
+                .addOnFailureListener { exception: Exception? -> handleError(exception!!) }
+        } else {
+            println("Token Provider is unprepared.")
+        }
+    }
+
+    fun sendToServer(token: StandardIntegrityToken, integrityToken: String) {
+        println("Integrity Token: $integrityToken")
+        var integrityDetails = getIntegrityVerdict()
+        var appIntegrity = integrityDetails.get("appIntegrity")!! as HashMap<String, Any>
+        if(appIntegrity.get("appRecognitionVerdict")!!.equals("PLAY_UNRECOGNIZED")){
+            println("TESTTt")
+           token.showDialog(this, 1)
+        }
+
+    }
+
+    fun getIntegrityVerdict(): HashMap<String, Any>{
+        var requestDetails: HashMap<String, Any> = hashMapOf("requestPackageName" to "com.hackathon.security", "requestHash" to "hasghsdh2jbdjsdbjs")
+        var deviceIntegrity: HashMap<String, Any> = hashMapOf("deviceRecognitionVerdict" to listOf<String>("MEETS_DEVICE_INTEGRITY"))
+        var appIntegrity: HashMap<String, Any> = hashMapOf("appRecognitionVerdict" to "PLAY_UNRECOGNIZED")
+        var integrityDetails: HashMap<String, Any> = hashMapOf("requestDetails" to requestDetails, "appIntegrity" to appIntegrity, "deviceIntegrity" to deviceIntegrity)
+        return integrityDetails
+
+    }
+
+    fun handleError(ex: Exception) {
+        println("Failed to warm up the token provider: $ex")
     }
 
     private fun initializeRecaptchaClient(onSuccess: () -> Unit, onFailure: (exception: Exception) -> Unit)

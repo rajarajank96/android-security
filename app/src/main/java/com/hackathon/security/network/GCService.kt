@@ -10,6 +10,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.Url
+import java.io.Serial
 
 
 internal lateinit var retrofit: Retrofit
@@ -31,6 +33,13 @@ data class Root(
     val riskAnalysis: RiskAnalysis,
     val tokenProperties: TokenProperties
 )
+
+data class RequestDetails(
+    val requestPackageName: String,
+    val timestampMillis: String
+)
+
+
 
 data class ResponseEvent(
     val token: String,
@@ -63,12 +72,21 @@ data class TokenProperties(
     val createTime: String
 )
 
+data class IntegrityToken(
+    @SerializedName("integrity_token")
+    val integrityToken: String
+)
+
 
 
 interface GCService
 {
     @POST("assessments?key=AIzaSyAX9tfGOj1Kf10wkUGlbRSMYgR1AQApZ6g")
     fun createAssessment(@Body event: RootEvent): Call<Root>
+
+    @POST
+    fun getIntergrityVerdict(@Url url: String, @Body body: IntegrityToken): Call<Root>
+
 }
 
 fun getClient(): Retrofit {
